@@ -1,13 +1,3 @@
-"""
-AssemblyAI Real-Time Streaming STT Transform
-
-Python implementation that mirrors the TypeScript AssemblyAISTTTransform.
-Connects to AssemblyAI's v3 WebSocket API for streaming speech-to-text.
-
-Input: PCM 16-bit audio buffer (bytes)
-Output: STT events (stt_chunk for partials, stt_output for final transcripts)
-"""
-
 import asyncio
 import contextlib
 import json
@@ -22,12 +12,7 @@ from app.events import STTChunkEvent, STTEvent, STTOutputEvent
 
 
 class AssemblyAISTT:
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        sample_rate: int = 16000,
-        format_turns: bool = True,
-    ):
+    def __init__(self, api_key: Optional[str] = None, sample_rate: int = 16000, format_turns: bool = True):
         self.api_key = api_key or os.getenv("ASSEMBLYAI_API_KEY")
         if not self.api_key:
             raise ValueError("AssemblyAI API key is required")
@@ -67,9 +52,7 @@ class AssemblyAISTT:
                                 pass
                             elif message_type == "Turn":
                                 transcript = message.get("transcript", "")
-                                turn_is_formatted = message.get(
-                                    "turn_is_formatted", False
-                                )
+                                turn_is_formatted = message.get("turn_is_formatted", False)
 
                                 if turn_is_formatted:
                                     if transcript:
@@ -78,7 +61,6 @@ class AssemblyAISTT:
                                     yield STTChunkEvent.create(transcript)
 
                             elif message_type == "Termination":
-                                # no-op
                                 pass
                             else:
                                 if "error" in message:
@@ -102,22 +84,13 @@ class AssemblyAISTT:
 
     async def _ensure_connection(self) -> WebSocketClientProtocol:
         if self._close_signal.is_set():
-            raise RuntimeError(
-                "AssemblyAISTT tried establishing a connection after it was closed"
-            )
+            raise RuntimeError("AssemblyAISTT tried establishing a connection after it was closed")
         if self._ws and self._ws.close_code is None:
             return self._ws
 
-        params = urlencode(
-            {
-                "sample_rate": self.sample_rate,
-                "format_turns": str(self.format_turns).lower(),
-            }
-        )
+        params = urlencode({"sample_rate": self.sample_rate, "format_turns": str(self.format_turns).lower()})
         url = f"wss://streaming.assemblyai.com/v3/ws?{params}"
-        self._ws = await websockets.connect(
-            url, additional_headers={"Authorization": self.api_key}
-        )
+        self._ws = await websockets.connect(url, additional_headers={"Authorization": self.api_key})
 
         self._connection_signal.set()
         return self._ws

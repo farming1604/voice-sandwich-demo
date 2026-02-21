@@ -54,9 +54,7 @@ header h1 {
 }
 
 .status-card,
-.conversation-card,
-.transcript-card,
-.agent-card {
+.conversation-card {
     background: var(--card-bg);
     border-radius: 12px;
     padding: 24px;
@@ -65,9 +63,7 @@ header h1 {
 }
 
 .status-card:hover,
-.conversation-card:hover,
-.transcript-card:hover,
-.agent-card:hover {
+.conversation-card:hover {
     box-shadow: var(--shadow-hover);
 }
 
@@ -177,9 +173,7 @@ header h1 {
     font-size: 1.3rem;
 }
 
-.conversation-card h2,
-.transcript-card h3,
-.agent-card h3 {
+.conversation-card h2 {
     margin-bottom: 16px;
     color: var(--text-primary);
     border-bottom: 2px solid var(--border-color);
@@ -246,33 +240,9 @@ header h1 {
     font-size: 0.9rem;
 }
 
-.transcript-box,
-.agent-box {
-    padding: 16px;
-    background: var(--bg-color);
-    border-radius: 8px;
-    min-height: 100px;
-    font-size: 1.05rem;
-    line-height: 1.6;
-}
-
 .placeholder {
     color: var(--text-secondary);
     font-style: italic;
-}
-
-.partial-transcript {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-.final-transcript {
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.agent-text {
-    color: var(--text-primary);
 }
 
 footer {

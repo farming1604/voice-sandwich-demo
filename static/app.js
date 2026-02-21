@@ -1,6 +1,7 @@
 const WS_URL = `ws://${window.location.host}/ws`;
 const SAMPLE_RATE = 16000;
 const BUFFER_SIZE = 4096;
+const TTS_SAMPLE_RATE = 24000;
 
 let websocket = null;
 let mediaStream = null;
@@ -9,13 +10,14 @@ let audioWorkletNode = null;
 let isRecording = false;
 let audioQueue = [];
 let isPlayingAudio = false;
+let playbackContext = null;
 
 const startBtn = document.getElementById('start-btn');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 const conversationBox = document.getElementById('conversation');
-const transcriptBox = document.getElementById('transcript');
-const agentResponseBox = document.getElementById('agent-response');
+let liveTranscriptMessage = null;
+let liveAssistantMessage = null;
 
 startBtn.addEventListener('click', toggleRecording);
 
@@ -107,6 +109,14 @@ function stopRecording() {
         audioContext = null;
     }
 
+    if (playbackContext) {
+        playbackContext.close();
+        playbackContext = null;
+    }
+
+    audioQueue = [];
+    isPlayingAudio = false;
+
     updateStatus('inactive', 'Stopped');
     startBtn.innerHTML = '<span class="btn-icon">🎤</span> Start Voice Chat';
     startBtn.classList.remove('btn-danger');
@@ -144,26 +154,21 @@ function handleEvent(event) {
 
     switch (event.type) {
         case 'stt_chunk':
-            updateTranscript(event.text, false);
+            upsertLiveTranscript(event.transcript);
             break;
 
         case 'stt_output':
-            updateTranscript(event.transcript, true);
-            addUserMessage(event.transcript);
+            finalizeLiveTranscript(event.transcript);
             break;
 
         case 'agent_chunk':
-            appendAgentResponse(event.text);
+            appendLiveAssistantResponse(event.text);
             updateStatus('speaking', 'Agent responding...');
             break;
 
         case 'agent_end':
             updateStatus('listening', 'Listening...');
-            const fullResponse = agentResponseBox.textContent;
-            if (fullResponse && fullResponse !== 'Agent will respond here...') {
-                addAssistantMessage(fullResponse);
-                agentResponseBox.innerHTML = '<p class="placeholder">Agent will respond here...</p>';
-            }
+            finalizeLiveAssistantResponse();
             break;
 
         case 'tool_call':
@@ -190,28 +195,49 @@ function updateStatus(status, text) {
     statusText.textContent = text;
 }
 
-function updateTranscript(text, isFinal) {
+function upsertLiveTranscript(text) {
     if (!text) return;
-    
-    const className = isFinal ? 'final-transcript' : 'partial-transcript';
-    transcriptBox.innerHTML = `<p class="${className}">${escapeHtml(text)}</p>`;
+
+    if (!liveTranscriptMessage) {
+        liveTranscriptMessage = createLiveMessage('user', '👤');
+    }
+
+    liveTranscriptMessage.textContent = text;
+    conversationBox.scrollTop = conversationBox.scrollHeight;
 }
 
-function appendAgentResponse(text) {
+function finalizeLiveTranscript(text) {
     if (!text) return;
-    
-    const placeholder = agentResponseBox.querySelector('.placeholder');
-    if (placeholder) {
-        agentResponseBox.innerHTML = '';
+
+    if (liveTranscriptMessage) {
+        const liveNode = liveTranscriptMessage.closest('.message');
+        if (liveNode) {
+            liveNode.remove();
+        }
+        liveTranscriptMessage = null;
     }
-    
-    const currentText = agentResponseBox.textContent || '';
-    agentResponseBox.innerHTML = `<p class="agent-text">${escapeHtml(currentText + text)}</p>`;
+
+    addUserMessage(text);
+}
+
+function appendLiveAssistantResponse(text) {
+    if (!text) return;
+
+    if (!liveAssistantMessage) {
+        liveAssistantMessage = createLiveMessage('assistant', '🤖');
+    }
+
+    liveAssistantMessage.textContent += text;
+    conversationBox.scrollTop = conversationBox.scrollHeight;
+}
+
+function finalizeLiveAssistantResponse() {
+    if (!liveAssistantMessage) return;
+    liveAssistantMessage = null;
 }
 
 function addUserMessage(text) {
     addMessage('user', '👤', text);
-    transcriptBox.innerHTML = '<p class="placeholder">Your speech will appear here...</p>';
 }
 
 function addAssistantMessage(text) {
@@ -225,6 +251,24 @@ function addSystemMessage(text) {
 function addToolMessage(title, content) {
     const contentStr = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
     addMessage('tool', '🔧', `${title}\n${contentStr}`);
+}
+
+function createLiveMessage(type, icon) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'message-icon';
+    iconSpan.textContent = icon;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+
+    messageDiv.appendChild(iconSpan);
+    messageDiv.appendChild(contentDiv);
+    conversationBox.appendChild(messageDiv);
+
+    return contentDiv;
 }
 
 function addMessage(type, icon, text) {
@@ -267,15 +311,38 @@ async function playNextAudioChunk() {
     const audioData = audioQueue.shift();
 
     try {
-        const playbackContext = new AudioContext({ sampleRate: 44100 });
-        const audioBuffer = await playbackContext.decodeAudioData(audioData.buffer);
-        
+        if (!playbackContext) {
+            playbackContext = new AudioContext();
+        }
+
+        if (playbackContext.state === 'suspended') {
+            await playbackContext.resume();
+        }
+
+        const sampleCount = Math.floor(audioData.byteLength / 2);
+        const pcm16 = new Int16Array(
+            audioData.buffer,
+            audioData.byteOffset,
+            sampleCount
+        );
+        const pcmFloat = new Float32Array(sampleCount);
+
+        for (let i = 0; i < sampleCount; i++) {
+            pcmFloat[i] = Math.max(-1, Math.min(1, pcm16[i] / 32768));
+        }
+
+        const audioBuffer = playbackContext.createBuffer(
+            1,
+            pcmFloat.length,
+            TTS_SAMPLE_RATE
+        );
+        audioBuffer.copyToChannel(pcmFloat, 0);
+
         const source = playbackContext.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(playbackContext.destination);
         
         source.onended = () => {
-            playbackContext.close();
             playNextAudioChunk();
         };
         

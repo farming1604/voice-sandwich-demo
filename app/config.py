@@ -8,8 +8,8 @@ class Settings(BaseSettings):
 
     ASSEMBLYAI_API_KEY: str
     CARTESIA_API_KEY: str
-    OPENROUTER_API_KEY: str
-    OPENROUTER_BASE_URL: str
-    OPENROUTER_DEFAULT_MODEL: str
+    GEMINI_API_KEY: str
+    GEMINI_DEFAULT_MODEL: str = "gemini-flash-latest"
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 settings = Settings()

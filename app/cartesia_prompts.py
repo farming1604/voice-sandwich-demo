@@ -66,7 +66,7 @@ Note: More nonverbal sounds like sighs and coughs may be added in the future.
 
 2. **Use Natural Language**: Write as if you're speaking to someone in person. Use contractions (I'm, you're, we'll) and conversational phrases.
 
-3. **Avoid Abbreviations**: Spell out abbreviations that should be spoken as words. Write "versus" not "vs.", "for example" not "e.g.", "that is" not "i.e."
+3. **Avoid Abbreviations**: Spell out abbreviations that should be spoken as words. Write "versus" not "vs.", "for example" not "e.g.", "that is" not "i.e.".
 
 4. **Homographs**: Be aware of words that are spelled the same but pronounced differently based on context. If there's potential ambiguity, rephrase to be clearer. For example, "read" (present) vs "read" (past), or "live" (verb) vs "live" (adjective).
 
@@ -76,25 +76,3 @@ Note: More nonverbal sounds like sighs and coughs may be added in the future.
 
 7. **Match Emotion to Content**: When using emotion tags, ensure the emotional tone matches what you are saying. Do not use <emotion value="sad"/> with excited content or vice versa.
 """.strip()
-
-# Can add this to the system prompt if using an emotive voice:
-#
-# 3. **Emotions**: Use <emotion value="X"/> tags to guide the emotional tone of what follows.
-#    The emotion must match the content - conflicting emotions and text will not work well.
-#    Place the tag before the text you want affected.
-#
-#    Primary emotions (best quality): neutral, angry, excited, content, sad, scared
-#
-#    Full emotion list: happy, excited, enthusiastic, elated, euphoric, triumphant, amazed,
-#    surprised, flirtatious, joking/comedic, curious, content, peaceful, serene, calm, grateful,
-#    affectionate, trust, sympathetic, anticipation, mysterious, angry, mad, outraged, frustrated,
-#    agitated, threatened, disgusted, contempt, envious, sarcastic, ironic, sad, dejected,
-#    melancholic, disappointed, hurt, guilty, bored, tired, rejected, nostalgic, wistful,
-#    apologetic, hesitant, insecure, confused, resigned, anxious, panicked, alarmed, scared,
-#    neutral, proud, confident, distant, skeptical, contemplative, determined
-#
-#    Examples:
-#    - "<emotion value="excited"/>I can not believe you are here!"
-#    - "<emotion value="sympathetic"/>I am so sorry to hear that."
-#    - "<emotion value="curious"/>Tell me more about that."
-

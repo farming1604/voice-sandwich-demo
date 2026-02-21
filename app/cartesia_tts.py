@@ -1,12 +1,3 @@
-"""
-Cartesia Text-to-Speech Streaming
-
-Python implementation of Cartesia's Sonic streaming TTS API.
-Converts text to PCM audio in real-time using WebSocket streaming.
-
-Input: Text strings
-Output: TTS events (tts_chunk for audio chunks)
-"""
 
 import asyncio
 import base64
@@ -17,7 +8,7 @@ import time
 from typing import AsyncIterator, Literal, Optional
 
 import websockets
-from websockets.client import WebSocketClientProtocol
+from websockets.legacy.client import WebSocketClientProtocol
 
 from app.events import TTSChunkEvent
 
@@ -55,10 +46,6 @@ class CartesiaTTS:
         self._context_counter = 0
 
     def _generate_context_id(self) -> str:
-        """
-        Generate a valid context_id for Cartesia.
-        Context IDs must only contain alphanumeric characters, underscores, and hyphens.
-        """
         timestamp = int(time.time() * 1000)
         counter = self._context_counter
         self._context_counter += 1
