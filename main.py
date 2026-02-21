@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncGenerator, AsyncIterator
 from uuid import uuid4
 
 import uvicorn
@@ -14,6 +14,7 @@ from langchain.agents import create_agent
 from langchain.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableGenerator
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
@@ -22,6 +23,7 @@ from app.cartesia_tts import CartesiaTTS
 from app.events import (
     AgentChunkEvent,
     AgentEndEvent,
+    EventType,
     ToolCallEvent,
     ToolResultEvent,
     VoiceAgentEvent,
@@ -74,7 +76,7 @@ model = ChatOpenAI(
     base_url=settings.GEMINI_BASE_URL,
 )
 
-agent = create_agent(
+agent: CompiledStateGraph = create_agent(
     model=model,
     tools=[add_to_order, confirm_order],
     system_prompt=system_prompt,
@@ -106,14 +108,14 @@ def _make_stt_stream():
     return _stt_stream
 
 
-def _make_agent_stream(agent):
+def _make_agent_stream(agent: CompiledStateGraph):
     async def _agent_stream(event_stream: AsyncIterator[VoiceAgentEvent]) -> AsyncIterator[VoiceAgentEvent]:
         thread_id = str(uuid4())
 
         async for event in event_stream:
             yield event
 
-            if event.type == "stt_output":
+            if event.type == EventType.STT_OUTPUT:
                 stream = agent.astream(
                     {"messages": [HumanMessage(content=event.transcript)]},
                     {"configurable": {"thread_id": thread_id}},
@@ -156,9 +158,9 @@ def _make_tts_stream():
             buffer: list[str] = []
             async for event in event_stream:
                 yield event
-                if event.type == "agent_chunk":
+                if event.type == EventType.AGENT_CHUNK:
                     buffer.append(event.text)
-                if event.type == "agent_end":
+                if event.type == EventType.AGENT_END:
                     await tts.send_text("".join(buffer))
                     buffer = []
 
@@ -195,7 +197,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 break
             yield data
 
-    output_stream = pipeline.atransform(websocket_audio_stream())
+    output_stream: AsyncGenerator[VoiceAgentEvent, None] = pipeline.atransform(websocket_audio_stream())
 
     try:
         async for event in output_stream:
@@ -210,7 +212,6 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         with contextlib.suppress(Exception):
             await output_stream.aclose()
-        with contextlib.suppress(Exception):
             if websocket.application_state != WebSocketState.DISCONNECTED:
                 await websocket.close()
 

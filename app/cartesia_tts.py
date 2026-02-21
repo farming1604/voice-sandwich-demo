@@ -5,12 +5,20 @@ import contextlib
 import json
 import os
 import time
-from typing import AsyncIterator, Literal, Optional
+from enum import StrEnum
+from typing import AsyncIterator, Optional
 
 import websockets
 from websockets.legacy.client import WebSocketClientProtocol
 
 from app.events import TTSChunkEvent
+
+
+class AudioEncoding(StrEnum):
+    PCM_S16LE = "pcm_s16le"
+    PCM_F32LE = "pcm_f32le"
+    PCM_MULAW = "pcm_mulaw"
+    PCM_ALAW = "pcm_alaw"
 
 
 class CartesiaTTS:
@@ -24,9 +32,7 @@ class CartesiaTTS:
         voice_id: str = "f6ff7c0c-e396-40a9-a70b-f7607edb6937",
         model_id: str = "sonic-3",
         sample_rate: int = 24000,
-        encoding: Literal[
-            "pcm_s16le", "pcm_f32le", "pcm_mulaw", "pcm_alaw"
-        ] = "pcm_s16le",
+        encoding: AudioEncoding | str = AudioEncoding.PCM_S16LE,
         language: str = "en",
         cartesia_version: str = "2025-04-16",
     ):
@@ -37,7 +43,7 @@ class CartesiaTTS:
         self.voice_id = voice_id
         self.model_id = model_id
         self.sample_rate = sample_rate
-        self.encoding = encoding
+        self.encoding = AudioEncoding(encoding)
         self.language = language
         self.cartesia_version = cartesia_version
         self._ws = None
