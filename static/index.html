@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Agent Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎙️ Voice Agent Demo</h1>
+            <p class="subtitle">Real-time voice interaction powered by AI</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Status Section -->
+            <div class="status-card">
+                <div class="status-indicator">
+                    <span id="status-dot" class="status-dot inactive"></span>
+                    <span id="status-text">Ready</span>
+                </div>
+                <button id="start-btn" class="btn btn-primary">
+                    <span class="btn-icon">🎤</span>
+                    Start Voice Chat
+                </button>
+            </div>
+
+            <!-- Conversation Display -->
+            <div class="conversation-card">
+                <h2>Conversation</h2>
+                <div id="conversation" class="conversation-box">
+                    <div class="message system">
+                        <span class="message-icon">ℹ️</span>
+                        <div class="message-content">
+                            Click "Start Voice Chat" and allow microphone access to begin.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transcript Display -->
+            <div class="transcript-card">
+                <h3>📝 Live Transcript</h3>
+                <div id="transcript" class="transcript-box">
+                    <p class="placeholder">Your speech will appear here...</p>
+                </div>
+            </div>
+
+            <!-- Agent Response Display -->
+            <div class="agent-card">
+                <h3>🤖 Agent Response</h3>
+                <div id="agent-response" class="agent-box">
+                    <p class="placeholder">Agent will respond here...</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by AssemblyAI, OpenRouter & Cartesia</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
